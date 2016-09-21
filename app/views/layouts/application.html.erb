@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>FirebaseHack</title>
+  <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
+  <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
+  <%= csrf_meta_tags %>
+</head>
+<body>
+
+  <%= yield %>
+
+
+
+  <script src="https://www.gstatic.com/firebasejs/3.4.0/firebase.js"></script>
+  <script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyDPjnbnqYvtQpYQLxo-mTvzg_hbPwiEKSw",
+    authDomain: "tescohack.firebaseapp.com",
+    databaseURL: "https://tescohack.firebaseio.com",
+    storageBucket: "tescohack.appspot.com",
+    messagingSenderId: "845500793716"
+  };
+  firebase.initializeApp(config);
+ var a =  firebase.database().ref('message_randomkey').child('text');
+  console.log("helooo");
+  console.log(a);
+
+</script>
+
+
+</body>
+</html>
