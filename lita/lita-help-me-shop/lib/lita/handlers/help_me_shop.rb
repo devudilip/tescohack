@@ -25,19 +25,36 @@ module Lita
       end
 
       def bot_index(req, res)
-        #res.write(req.env['QUERY_STRING'])
-        # base_uri = 'https://tescohack.firebaseio.com/'
-
-        # firebase = Firebase::Client.new(base_uri)
-        # response = firebase.get("message_randomkey")
-
-        message = JSON.parse(req.env['QUERY_STRING'])
-        cp = Lita::Handlers::Chatparse.new
-        if cp.parse(message)
-          @text = get_answer(message['action'])
+        text = nil
+        val = req.env['QUERY_STRING']
+        parsed_val = JSON.parse(URI.decode_www_form(val)[0][0])
+        if chat_parser.parse(parsed_val)
+          text = get_answer(parsed_val['payload'])
+        else
+          puts "message not addressed at bot"
         end
-
-        res.write(@text)
+        
+        response = 
+        #only if the text is available
+       if text 
+        #psuedo
+        if normal_message
+        reply_with_text(message)
+        elsif button_formatter
+          reply_with_button(message)
+        elsif show_products
+          reply_with_products(message)
+        end
+       end
+        puts(response)
+      end
+      
+      def text_keygen(user, text)
+        {"user": user,"type": "text","payload": text}
+      end
+        
+      def reply_with_text(message)
+        firebase.push(table_name, text_keygen(message['user'], text))
       end
 
       def get_response(request)
@@ -78,7 +95,7 @@ module Lita
         return "Hey nothinh aval" if key.empty?
         redis.get(key)
       end
-
+      
       def get_quantity(message)
         message
       end
@@ -92,8 +109,8 @@ module Lita
     class ChatParser
 
       def parse message
-        if message['action']
-          if string_has_dave(message['action'])
+        if message['payload']
+          if string_has_dave(message['payload'])
             return true
           else
             return false
