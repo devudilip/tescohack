@@ -22,10 +22,39 @@
     storageBucket: "tescohack.appspot.com",
     messagingSenderId: "845500793716"
   };
+  var setMessage = function(data) {
+    var val = data.val();
+
+    console.log(val);
+    val = JSON.stringify(val);
+    console.log(val);
+    var xmlhttp = new XMLHttpRequest();
+
+    // xmlhttp.onreadystatechange = function() {
+    //     if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
+    //        if (xmlhttp.status == 200) {
+    //            document.getElementById("myDiv").innerHTML = xmlhttp.responseText;
+    //        }
+    //        else if (xmlhttp.status == 400) {
+    //           alert('There was an error 400');
+    //        }
+    //        else {
+    //            alert('something else other than 200 was returned');
+    //        }
+    //     }
+    // };
+    var url = "/chats?value=" + val;
+
+    xmlhttp.open("GET", url, true);
+    xmlhttp.send();
+
+    // this.displayMessage(data.key, val.name, val.text, val.photoUrl, val.imageUrl);
+  };
   firebase.initializeApp(config);
- var a =  firebase.database().ref('message_randomkey').child('text');
-  console.log("helooo");
-  console.log(a);
+  var messagesRef =  firebase.database().ref('test');
+  messagesRef.limitToLast(12).on('child_added', setMessage);
+  // console.log("helooo");
+  // console.log(messagesRef);
 
 </script>
 
