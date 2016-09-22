@@ -27,6 +27,9 @@ Lita.configure do |config|
   config.robot.alias = "/"
   ## Example: Set options for the chosen adapter.
   # config.adapter.username = "myname"
+
+  config.http.host = "127.0.0.1"
+  config.http.port = 8080
   # config.adapter.password = "secret"
 
   ## Example: Set options for the Redis connection.

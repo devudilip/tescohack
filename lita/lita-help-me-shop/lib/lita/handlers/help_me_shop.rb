@@ -1,5 +1,6 @@
 module Lita
   module Handlers
+    require 'firebase'
     class HelpMeShop < Handler
 
 
@@ -22,9 +23,15 @@ module Lita
           robot.send_message(message.source, "I recieved an Unhandled Message - #{message.body}!!")
         end
       end
-      
+
       def bot_index(req, res)
-        res.write(req)
+        #res.write(req.env['QUERY_STRING'])
+        base_uri = 'https://tescohack.firebaseio.com/'
+
+          firebase = Firebase::Client.new(base_uri)
+         response = firebase.get("message_randomkey")
+
+        res.write(Lita::Handlers::Chatparse.parse)
       end
 
       def get_response(request)
@@ -53,26 +60,33 @@ module Lita
         end
         request.reply_with_mention(res_message)
       end
-      
+
       private
 
       def get_answer(question)
         #question = questions.detect { |q| Regexp.new(q.sub('lita:handlers:help_me_shop:', ''), 'i') =~ question }
         #TODO: fix this as am always expecting a single key here
-        regexp_type = "/(([0-9])( |)(ltr|litre|litres|ltrs|gms|gram|kg|kilogram|gm|kilos|kilo gram|kilo gram|kilo gm))/ig"
-        get_sizequestion.match(regexp_type)
+        # regexp_type = "/(([0-9])( |)(ltr|litre|litres|ltrs|gms|gram|kg|kilogram|gm|kilos|kilo gram|kilo gram|kilo gm))/ig"
+        # get_sizequestion.match(regexp_type)
         key = redis.keys(question)
         return nil if key.empty?
         redis.get(key)
       end
-      
+
       def get_quantity(message)
           message
       end
 
 
-      
+
     end
     Lita.register_handler(HelpMeShop)
+
+
+    class Chatparse
+      def self.parse
+        puts "LLLLLLLLLLLLLLLLLLll"
+      end
+    end
   end
 end
