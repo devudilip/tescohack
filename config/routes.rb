@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   root to: 'home#index'
   get "home/index"
 
+  post '/payment_call_back' => "home#payment_call_back"
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 

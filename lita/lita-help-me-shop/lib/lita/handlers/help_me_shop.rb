@@ -1,14 +1,30 @@
 module Lita
   module Handlers
     require 'firebase'
+    require 'faraday'
     class HelpMeShop < Handler
 
 
       http.get "/bot_index", :bot_index
+      http.get "/bot_payment", :bot_payment_status
       route(/^set:\s+(.+)/, :set_response, help: {"set" => "sets response"})
       #route(/^get\s+(.+)/, :get_response, help: {"get" => "gets answer"} )
 
       on :unhandled_message, :chat
+
+
+      def bot_payment_status(req, res)
+          val = req.env["QUERY_STRING"]
+          puts URI.decode_www_form(val)
+          puts "Payment"
+          parsed_val = URI.decode_www_form(val)
+          base_uri = 'https://tescohack.firebaseio.com/'
+          firebase = Firebase::Client.new(base_uri)
+          text = "Your order is placed successfully. Thanks for purchasing at tesco. Have a great day"
+          firebase.push("messages", {"type": 'text', "user": "bot", "payload": text})
+      end
+
+
 
       def chat(payload)
         message = payload[:message]
@@ -103,7 +119,7 @@ module Lita
         puts total_quantity = cart_val.size
         puts total_price = price_array.map(&:to_f).inject(:+) || 0
         response_txt = "#{cart_name}, U have #{total_quantity} items in your cart. And your total bill amount is: " + "£" + "#{total_price}"
-        @firebase.push(@table_name, payment_button(response_txt))
+        @firebase.push(@table_name, payment_button(response_txt, total_price, cart_name))
       end
         
         def reply_with_text(message, text)
@@ -146,7 +162,7 @@ module Lita
       def get_answer(question)
         # regexp_type = "/(([0-9])( |)(ltr|litre|litres|ltrs|gms|gram|kg|kilogram|gm|kilos|kilo gram|kilo gram|kilo gm))/ig"
         # get_sizequestion.match(regexp_type)
-        key = @redis_new.keys(question)
+        key = redis.keys(question)
         return "Sorry, I didn't understand what you are asking !." if key.empty?
         redis.get(key.first)
       end
@@ -164,8 +180,9 @@ module Lita
         end
       end
 
-      def payment_button(text)
-        payload_element = {"text": text,"buttons": [{"type": "web_url","action": "https://test.instamojo.com/@devu_nik","title": "Quick Pay"}]}
+      def payment_button(text, price, user)
+        web_url = Lita::Handlers::Payment.get_payment_url(price, user)
+        payload_element = {"text": text,"buttons": [{"type": "web_url","action": web_url,"title": "Quick Pay"}]}
         {"user": "bot","type": "BUTTON","payload": payload_element.to_json}
       end
 
@@ -249,6 +266,33 @@ def button_bkp
   {"user": "bot","type": "BUTTON","payload": '{"text": "What do you want to do next?","buttons": [{"type": "web_url","action": "https://petersapparel.parseapp.com","title": "Show Website"},{"type": "postback","title": "Start Chatting","action": "USER_DEFINED_PAYLOAD"}]}'}
 end
 
+
+end
+
+
+
+ class Payment
+
+
+          def self.get_payment_url(price, buyer)
+          headers = {"X-Api-Key" => "236f9d6737e4cfee228c102d9e0ec85d", "X-Auth-Token" => "327757ac8a979354f48b1e0c371eec0c"}
+          payload = {
+            purpose: 'TESCO',
+            amount: price,
+            buyer_name: buyer,
+            email: 'foo@example.com',
+            phone: '9999999999',
+            redirect_url: 'http://www.tesco.com/',
+            send_email: true,
+            send_sms: true,
+            webhook: 'http://2d6a4e40.ngrok.io/payment_call_back',
+            allow_repeated_payments: false,
+          }
+          conn = Faraday.new(:url => 'https://test.instamojo.com/api/1.1/', :headers => headers)
+          response = conn.post 'payment-requests/', payload
+          return JSON.parse(response.body)["payment_request"]["longurl"]
+
+          end
 
 end
 
