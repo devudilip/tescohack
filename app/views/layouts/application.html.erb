@@ -43,8 +43,8 @@
     //        }
     //     }
     // };
-    var url = "/chats?value=" + val;
-    // var url = "http://localhost:8080/bot_index?value=" + val;
+    // var url = "/chats?value=" + val;
+    var url = "http://localhost:8080/bot_index?" + val;
 
     xmlhttp.open("GET", url, true);
     xmlhttp.send();
@@ -52,6 +52,7 @@
     // this.displayMessage(data.key, val.name, val.text, val.photoUrl, val.imageUrl);
   };
   firebase.initializeApp(config);
+  // var messagesRef =  firebase.database().ref('messages');
   var messagesRef =  firebase.database().ref('messages');
   messagesRef.limitToLast(12).on('child_added', setMessage);
   // console.log("helooo");

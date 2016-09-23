@@ -38,8 +38,4 @@ Lita.configure do |config|
 
   ## Example: Set configuration for any loaded handlers. See the handler's
   ## documentation for options.
-  config.handlers.help_me_shop.firebase_uri = 'https://tescohack.firebaseio.com/'
-  config.handlers.help_me_shop.firebase = Firebase::Client.new(firebase_uri)
-  config.handlers.help_me_shop.chat_parser = Lita::Handlers::Chatparse.new
-  config.handlers.help_me_shop.table_name = "message_randomkey"
 end
