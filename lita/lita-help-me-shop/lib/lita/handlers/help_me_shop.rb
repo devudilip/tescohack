@@ -32,39 +32,62 @@ module Lita
         parsed_val = JSON.parse(URI.decode_www_form(val)[0][0])
         message = parsed_val
         @chat_parser = Lita::Handlers::ChatParser.new
-puts ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-puts message['user']
         return nil if message['user'].upcase == 'BOT'
         if @chat_parser.parse(parsed_val)
-            @product_details_val = product_details(message['payload'])
-              if !@product_details_val.empty?
-              response = reply_with_products(@product_details_val)
-              elsif get_answer(message['payload'])
-                response = reply_with_text(message, get_answer(message['payload']))
+          @product_details_val = product_details(message['payload'])
+          if !@product_details_val.empty?
+            response = reply_with_products(@product_details_val)
+          elsif get_answer(message['payload'])
+            response = reply_with_text(message, get_answer(message['payload']))
               #elsif 
                # reply_with_products(message)
                 #generic(products)
               else
                 response = reply_with_text(message, "Sorry unable to help U")
               end
-        else
-        response = reply_with_text(message, "message not addressed at bot")
-        end
-      end
-      
-      def text_keygen(user, text)
-        {"user": "bot","type": "text","payload": text}
-      end
-        
-      def reply_with_text(message, text)
-        @firebase.push(@table_name, text_keygen(message['user'], text))
-      end
-      
-      def reply_with_products(message)
-        @firebase.push(@table_name, @chat_parser.generic(@product_details_val))
-      end
+            elsif message['type'] == "postback"  && message['payload']
+              add_to_cart(message)
+            else
+              response = reply_with_text(message, "message not addressed at bot")
+            end
+          end
 
-      def get_response(request)
+          def add_to_cart(message)
+            payloads = JSON.parse(message['payload'])
+            get_actions =  payloads['action'].split("/")
+            if get_actions[3] == 'me'
+              table_name = message['user']
+            else
+              table_name = 'rajesh'
+            end
+            
+            product = get_product_info(get_actions[2])
+            @firebase.push(table_name, {info: product})
+            @firebase.push('messages', {"user": "bot","type": "text","payload": "#{product['title']} is added to #{table_name}'s cart."})
+         end
+
+
+         def get_product_info(id)
+          table = "products_" + id.to_s
+          puts table
+          redis_new = Redis.new
+          product = redis_new.hgetall(table)
+         end
+
+
+         def text_keygen(user, text)
+          {"user": "bot","type": "text","payload": text}
+        end
+        
+        def reply_with_text(message, text)
+          @firebase.push(@table_name, text_keygen(message['user'], text))
+        end
+
+        def reply_with_products(message)
+          @firebase.push(@table_name, @chat_parser.generic(@product_details_val))
+        end
+
+        def get_response(request)
         #redis.get("mykey")
         redis.get(request)
       end
@@ -121,28 +144,28 @@ puts message['user']
         redis_new = Redis.new
         keys = redis_new.keys('products_*')
 
-          keys.each { |k|
+        keys.each { |k|
           k_val = redis_new.hgetall(k)
           
-            products_val << k_val if message.match(/#{k_val['category']}/i)
-          }
-          return products_val
+          products_val << k_val if message.match(/#{k_val['category']}/i)
+        }
+        return products_val
       end
 
     end
     Lita.register_handler(HelpMeShop)
 
 
-class ChatParser
+    class ChatParser
 
-  def parse message
-    if ((message['type'].upcase == 'text'.upcase) and message['user'].upcase != 'BOT')
+      def parse message
+        if ((message['type'].upcase == 'text'.upcase) and message['user'].upcase != 'BOT')
      #call_bot(message['payload']) if string_has_dave(message['payload'])
      return true if string_has_dave(message['payload'])
    else
     return false
-    end
   end
+end
 
 
 def string_has_dave(str)
@@ -163,12 +186,12 @@ def generic(products)
 end
 
 def elements_array(products)
-   products_array = add_products(products)
-   {"elements": products_array}.to_json
+ products_array = add_products(products)
+ {"elements": products_array}.to_json
    #{}"\'{\"elements\":" + products_array + "}\'"
-end
+ end
 
-def button
+ def button
   {"user": "bot","type": "BUTTON","payload": '{"text": "What do you want to do next?","buttons": [{"type": "web_url","action": "https://petersapparel.parseapp.com","title": "Show Website"},{"type": "postback","title": "Start Chatting","action": "USER_DEFINED_PAYLOAD"}]}'}
 end
 
@@ -181,7 +204,7 @@ def add_products(products)
 end
 
 def product_info(product)
-  {"title": product['title'],"image_url": product['image_url'],"subtitle": product['subtitle'],"buttons": [{"type": "web_url","title": "View Website","action": "http://img.tesco.com/Groceries/pi/457/5000436589457/IDShot_225x225.jpg"},{"type": "postback","title": "Start Chatting","action": "https://petersfancybrownhats.com"}]}
+  {"title": product['title'],"image_url": product['image_url'],"subtitle": product['subtitle'],"buttons": [{"type": "postback","title": "+ MyCart","action": "action/addToBasket/#{product['id']}/me"},{"type": "postback","title": "+ Group Cart","action": "action/addToBasket/#{product['id']}/group"}]}
 end
 
 def generic_bkp
@@ -194,7 +217,7 @@ def button_bkp
 end
 
 
-    end
+end
 
-  end
+end
 end
