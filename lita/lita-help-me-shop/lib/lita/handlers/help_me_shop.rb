@@ -37,7 +37,9 @@ module Lita
         # handles only the text type and name not in bot
         if @chat_parser.parse(parsed_val)
           @product_details_val = product_details(message['payload'])
-                if !@product_details_val.empty?
+                if message['payload'].upcase.match(/CHECKOUT/)
+                  reply_with_check_out(message['payload'])
+                elsif !@product_details_val.empty?
                   response = reply_with_products(@product_details_val)
                 elsif get_answer(message['payload'])
                   response = reply_with_text(message, get_answer(message['payload']))
@@ -82,14 +84,16 @@ module Lita
           {"user": "bot","type": "text","payload": text}
         end
       
-      def check_out(message)
-        message['type'] == 'postback' && message['title']
-        cart_name = "cart"
-        val = @firebase.get("cart_name", {cart_id: cart.id}).to_json
-        #count of products
-        #price of product
-        #total price of cart
-        @firebase.push("cart_name")
+      def reply_with_check_out(message)
+        cart_name = message['user']
+        price_array = []
+        cart_val = @firebase.get(cart_name).body.values
+        cart_val.each {|k| 
+            price_array << k["info"]["price"]
+        }
+        total_quantity = cart_val.size
+        total_price = price_array.map(&:to_s).sum
+        @firebase.push(@table_name, "#{cart_name}, hey u have #{total_quantity} products costing to #{total_price}")
       end
         
         def reply_with_text(message, text)
