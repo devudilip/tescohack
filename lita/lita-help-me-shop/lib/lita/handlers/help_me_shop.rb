@@ -102,7 +102,7 @@ module Lita
         puts price_array
         puts total_quantity = cart_val.size
         puts total_price = price_array.map(&:to_f).inject(:+) || 0
-        response_txt = "#{cart_name}, U have #{total_quantity} items in your cart. And your total bill amount is: #{total_price}"
+        response_txt = "#{cart_name}, U have #{total_quantity} items in your cart. And your total bill amount is: " + "£" + "#{total_price}"
         @firebase.push(@table_name, payment_button(response_txt))
       end
         
@@ -165,7 +165,7 @@ module Lita
       end
 
       def payment_button(text)
-        payload_element = {"text": text,"buttons": [{"type": "web_url","action": "https://petersapparel.parseapp.com","title": "Quick Pay"}]}
+        payload_element = {"text": text,"buttons": [{"type": "web_url","action": "https://test.instamojo.com/@devu_nik","title": "Quick Pay"}]}
         {"user": "bot","type": "BUTTON","payload": payload_element.to_json}
       end
 
@@ -237,7 +237,7 @@ def add_products(products)
 end
 
 def product_info(product)
-  {"title": product['title'],"image_url": product['image_url'],"subtitle": product['subtitle'],"buttons": [{"type": "postback","title": "+ MyCart","action": "action/addToBasket/#{product['id']}/me"},{"type": "postback","title": "+ Group Cart","action": "action/addToBasket/#{product['id']}/group"}]}
+  {"title": product['title'],"image_url": product['image_url'],"subtitle": "£" + product["price"] + " : " + product['subtitle'] ,"buttons": [{"type": "postback","title": "+ MyCart","action": "action/addToBasket/#{product['id']}/me"},{"type": "postback","title": "+ Group Cart","action": "action/addToBasket/#{product['id']}/group"}]}
 end
 
 def generic_bkp
