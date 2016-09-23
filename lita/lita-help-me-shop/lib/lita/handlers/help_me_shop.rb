@@ -85,7 +85,8 @@ module Lita
         end
       
       def reply_with_check_out(message)
-        cart_name = message['user']
+        cart_name = message["user"]
+        puts cart_name
         price_array = []
         cart_val = @firebase.get(cart_name).body.values
         cart_val.each {|k| 
@@ -93,7 +94,7 @@ module Lita
         }
         total_quantity = cart_val.size
         total_price = price_array.map(&:to_s).sum
-        @firebase.push(@table_name, "#{cart_name}, hey u have #{total_quantity} products costing to #{total_price}")
+        @firebase.push(@table_name, text_keygen(message['user'],"#{cart_name}, hey u have #{total_quantity} products costing to #{total_price}"))
       end
         
         def reply_with_text(message, text)
