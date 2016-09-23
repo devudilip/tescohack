@@ -27,15 +27,16 @@ module Lita
         text = nil
         base_uri = 'https://tescohack.firebaseio.com/'
         @firebase = Firebase::Client.new(base_uri)
+        @redis_new = Redis.new
         @table_name = "messages"
         val = req.env['QUERY_STRING']
         parsed_val = JSON.parse(URI.decode_www_form(val)[0][0])
         message = parsed_val
         @chat_parser = Lita::Handlers::ChatParser.new
-puts ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-puts message['user']
         return nil if message['user'].upcase == 'BOT'
+        # handles only the text type
         if @chat_parser.parse(parsed_val)
+          
             @product_details_val = product_details(message['payload'])
               if !@product_details_val.empty?
               response = reply_with_products(@product_details_val)
@@ -45,16 +46,25 @@ puts message['user']
                # reply_with_products(message)
                 #generic(products)
               else
-                response = reply_with_text(message, "Sorry unable to help U")
+                response = reply_with_text(message, "Oops that product is not in our store. We will update you once available.")
               end
-        else
-        response = reply_with_text(message, "message not addressed at bot")
         end
       end
       
       def text_keygen(user, text)
         {"user": "bot","type": "text","payload": text}
       end
+      
+      def check_out(message)
+        message['type'] == 'postback' && message['title']
+        cart_name = "cart"
+        val = @firebase.get("cart_name", {cart_id: cart.id}).to_json
+        #count of products
+        #price of product
+        #total price of cart
+        @firebase.push("cart_name")
+      end
+        
         
       def reply_with_text(message, text)
         @firebase.push(@table_name, text_keygen(message['user'], text))
@@ -94,13 +104,11 @@ puts message['user']
       private
 
       def get_answer(question)
-        #question = questions.detect { |q| Regexp.new(q.sub('lita:handlers:help_me_shop:', ''), 'i') =~ question }
-        #TODO: fix this as am always expecting a single key here
         # regexp_type = "/(([0-9])( |)(ltr|litre|litres|ltrs|gms|gram|kg|kilogram|gm|kilos|kilo gram|kilo gram|kilo gm))/ig"
         # get_sizequestion.match(regexp_type)
-        key = redis.keys(question)
-        return "Hey nothinh aval" if key.empty?
-        redis.get(key)
+        key = @redis_new.keys(question)
+        return "Sorry, I didn't understand what you are asking !." if key.empty?
+        redis.get(key.first)
       end
       
       def get_quantity(message)
@@ -136,7 +144,7 @@ puts message['user']
 class ChatParser
 
   def parse message
-    if ((message['type'].upcase == 'text'.upcase) and message['user'].upcase != 'BOT')
+    if (message['type'].upcase == 'text'.upcase)
      #call_bot(message['payload']) if string_has_dave(message['payload'])
      return true if string_has_dave(message['payload'])
    else
