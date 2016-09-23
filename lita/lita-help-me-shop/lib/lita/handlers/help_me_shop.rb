@@ -38,7 +38,7 @@ module Lita
         if @chat_parser.parse(parsed_val)
           @product_details_val = product_details(message['payload'])
                 if message['payload'].upcase.match(/CHECKOUT/)
-                  reply_with_check_out(message['payload'])
+                  reply_with_check_out(message)
                 elsif !@product_details_val.empty?
                   response = reply_with_products(@product_details_val)
                 elsif get_answer(message['payload'])
@@ -86,15 +86,24 @@ module Lita
       
       def reply_with_check_out(message)
         cart_name = message["user"]
-        puts cart_name
+        #puts cart_name
         price_array = []
-        cart_val = @firebase.get(cart_name).body.values
+
+        cart = @firebase.get(cart_name).body
+          if cart
+            cart_val = cart.values
+          else
+            reply_with_text(message['user'], "U do not have any Item in your cart. Please add an item to checkout")
+            return
+          end
         cart_val.each {|k| 
             price_array << k["info"]["price"]
         }
-        total_quantity = cart_val.size
-        total_price = price_array.map(&:to_s).sum
-        @firebase.push(@table_name, text_keygen(message['user'],"#{cart_name}, hey u have #{total_quantity} products costing to #{total_price}"))
+        puts price_array
+        puts total_quantity = cart_val.size
+        puts total_price = price_array.map(&:to_f).inject(:+) || 0
+        response_txt = "#{cart_name}, U have #{total_quantity} items in your cart. And your total bill amount is: #{total_price}"
+        @firebase.push(@table_name, payment_button(response_txt))
       end
         
         def reply_with_text(message, text)
@@ -154,6 +163,13 @@ module Lita
           []
         end
       end
+
+      def payment_button(text)
+        payload_element = {"text": text,"buttons": [{"type": "web_url","action": "https://petersapparel.parseapp.com","title": "Quick Pay"}]}
+        {"user": "bot","type": "BUTTON","payload": payload_element.to_json}
+      end
+
+
 
       def products(message)
         products_val = []
