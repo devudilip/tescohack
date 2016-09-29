@@ -91,7 +91,7 @@ module Lita
             
             product = get_product_info(get_actions[2])
             @firebase.push(table_name, {info: product})
-            @firebase.push('messages', {"user": "bot","type": "text","payload": "#{product['title']} is added to #{table_name}'s cart."})
+            @firebase.push('messages', {"user": "bot","type": "text","payload": "#{product['title']} is added to #{table_name.capitalize}'s cart."})
          end
 
 
