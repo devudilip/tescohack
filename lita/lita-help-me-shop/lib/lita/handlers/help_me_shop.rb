@@ -17,11 +17,17 @@ module Lita
           val = req.env["QUERY_STRING"]
           puts URI.decode_www_form(val)
           puts "Payment"
-          parsed_val = URI.decode_www_form(val)
+          parsed_val = JSON.parse(URI.decode_www_form(val)[0][0]).first
+          
           base_uri = 'https://tescohack.firebaseio.com/'
           firebase = Firebase::Client.new(base_uri)
-          text = "Your order is placed successfully. Thanks for purchasing at tesco. Have a great day"
-          firebase.push("messages", {"type": 'text', "user": "bot", "payload": text})
+          text = (if parsed_val[1] == true
+                " Your order is placed successfully. Thanks for purchasing at tesco. Have a great day"
+                else
+                " Your order has failed. Please try again."
+                end)
+          
+          firebase.push("messages", {"type": 'text', "user": "bot", "payload": "Hi #{parsed_val[0]}," + text})
       end
 
 
@@ -45,7 +51,8 @@ module Lita
         @firebase = Firebase::Client.new(base_uri)
         @redis_new = Redis.new
         @table_name = "messages"
-        val = req.env['QUERY_STRING']
+        val = req.env['QUERY_STRING'].gsub('/%22', '\%22')
+        p val
         parsed_val = JSON.parse(URI.decode_www_form(val)[0][0])
         message = parsed_val
         @chat_parser = Lita::Handlers::ChatParser.new
@@ -118,6 +125,8 @@ module Lita
         puts price_array
         puts total_quantity = cart_val.size
         puts total_price = price_array.map(&:to_f).inject(:+) || 0
+        total_price = total_price.round(2)
+        cart_name = cart_name.capitalize
         response_txt = "#{cart_name}, U have #{total_quantity} items in your cart. And your total bill amount is: " + "£" + "#{total_price}"
         @firebase.push(@table_name, payment_button(response_txt, total_price, cart_name))
       end
@@ -163,7 +172,12 @@ module Lita
         # regexp_type = "/(([0-9])( |)(ltr|litre|litres|ltrs|gms|gram|kg|kilogram|gm|kilos|kilo gram|kilo gram|kilo gm))/ig"
         # get_sizequestion.match(regexp_type)
         key = redis.keys(question)
-        return "Sorry, I didn't understand what you are asking !." if key.empty?
+        if key.empty?
+          if question.match(/thanks|tks|thanku|thank you|thnks/)
+            return ['Welcome', 'Hope you had fun!!', 'See You Soon'].sample
+          end
+          return "Sorry, I didn't understand what you are asking !." 
+        end
         redis.get(key.first)
       end
       
@@ -280,16 +294,17 @@ end
             purpose: 'TESCO',
             amount: price,
             buyer_name: buyer,
-            email: 'foo@example.com',
-            phone: '9999999999',
+            email: "#{buyer.downcase}@tesco.com",
+            phone: ['9908765424','9876076523','9076542312'].sample,
             redirect_url: 'http://www.tesco.com/',
             send_email: true,
             send_sms: true,
-            webhook: 'http://2d6a4e40.ngrok.io/payment_call_back',
+            webhook: 'https://hack-tes-sathishachilles.c9users.io:8080/payment_call_back',
             allow_repeated_payments: false,
           }
           conn = Faraday.new(:url => 'https://test.instamojo.com/api/1.1/', :headers => headers)
           response = conn.post 'payment-requests/', payload
+          p response.body
           return JSON.parse(response.body)["payment_request"]["longurl"]
 
           end

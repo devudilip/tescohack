@@ -1,3 +1,4 @@
+require 'net/http'
 class HomeController < ApplicationController
   def index
     base_uri = 'https://tescohack.firebaseio.com/'
@@ -13,25 +14,23 @@ class HomeController < ApplicationController
 
   def payment_call_back
 
-    #   url = "http://localhost:8080/bot_payment?"
-    #   if params["status"] == "Credit"
-    #       val =  true
-    #   else
-    #       val=  false
+    url = "https://hack-tes-sathishachilles.c9users.io:8081/bot_payment?"
+    if params["status"] == "Credit"
+      val =  true
+    else
+      val=  false
+    end
 
-    #    end
-    #    puts ">>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-    #    puts params
-
-
-    # complet_url = url + {params['buyer_name'] => val}.to_json
-    # redirect_to complet_url
-
-
-    base_uri = 'https://tescohack.firebaseio.com/'
-    firebase = Firebase::Client.new(base_uri)
-    text = "Your order is placed successfully. Thanks for purchasing at tesco. Have a great day"
-    firebase.push("messages", {"type": 'text', "user": "bot", "payload": text})
+    complet_url = url + {params["buyer_name"] => val}.to_json
+    
+    url = URI.parse(complet_url)
+    req = Net::HTTP::Get.new(url.to_s)
+    res = Net::HTTP.start(url.host, url.port) {|http|
+      http.request(req)
+    }
+    
+    p res.body
+   
   end
   
 end

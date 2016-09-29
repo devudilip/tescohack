@@ -6,7 +6,7 @@ Lita.configure do |config|
   config.robot.name = "Dave"
   
   #changing port
-  config.http.port = 8081
+  #config.http.port = 8081
 
   # The locale code for the language to use.
   # config.robot.locale = :en
@@ -28,8 +28,9 @@ Lita.configure do |config|
   ## Example: Set options for the chosen adapter.
   # config.adapter.username = "myname"
 
-  config.http.host = "127.0.0.1"
-  config.http.port = 8080
+  #config.http.host = "127.0.0.1"
+  config.http.host = "0.0.0.0"
+  config.http.port = 8081
   # config.adapter.password = "secret"
 
   ## Example: Set options for the Redis connection.
